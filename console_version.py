@@ -4,6 +4,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 import requests
 import queue
 import threading
+import concurrent.futures
+import time
 
 count = 1
 
@@ -14,7 +16,6 @@ def saveImage(the_queue):
             data = the_queue.get()
         except queue.Empty:
             print('empty')
-        # print(data)
         name = '{}.jpg'.format(count)
         count += 1
         with open(str(name), 'wb') as handle:
@@ -46,15 +47,9 @@ def get_all_pictures(browser, page, the_queue):
 
     xpath = "//*[contains(concat(' ', normalize-space(@class), ' '), ' _icyx7 ')]"
     pictures = browser.find_elements_by_xpath(xpath)
-    for picture in pictures:
-        get_request_thread = threading.Thread(target=get_request, args=(picture.get_attribute('src'), the_queue,),
-            daemon=True)
-        print('started')
-        get_request_thread.start()
-        # print('ending thread')
-        # get_request_thread.join()
-        print('killed')
-        #pictures_list.append(picture.get_attribute('src'))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
+        for url in pictures:
+            executor.submit(get_request, url.get_attribute('src'), the_queue)
 
     return pictures_list
 
@@ -66,10 +61,11 @@ def get_request(image_url, the_queue):
         print(e)
 
 if __name__ == '__main__':
+    start_time = time.time()
     the_queue = queue.Queue()
     the_write_thread = threading.Thread(target=saveImage, args=(the_queue,))
     browser = webdriver.Firefox()
-    base_page = 'https://www.instagram.com/tobz213/'
+    base_page = 'https://www.instagram.com//'
     pictures = get_all_pictures(browser, base_page, the_queue)
     the_write_thread.start()
 
@@ -81,5 +77,4 @@ if __name__ == '__main__':
     except Exception as e:
         print(e)
 
-    # for i in range(len(pictures)):
-    #     saveImage(str(i), pictures[i])
+    print("--- %s seconds ---" % (time.time() - start_time))
