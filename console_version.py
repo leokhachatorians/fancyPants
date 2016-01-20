@@ -16,7 +16,7 @@ def saveImage(the_queue):
         try:
             data = the_queue.get()
         except queue.Empty:
-            print('empty')
+            pass
         name = '{}.jpg'.format(count)
         count += 1
         with open(str(name), 'wb') as handle:
@@ -54,16 +54,6 @@ def login(browser, username, password):
     url = 'https://www.instagram.com/accounts/login/'
     browser.get(url)
     browser.implicitly_wait(1)
-    # try:
-    #     #browser.find_element_by_class_name('_k6cv7').click()
-    #     browser.find_element_by_xpath('//a[@class="_k6cv7")
-    # except Exception as e:
-    #     pass
-    # try:
-        #browser.find_element_by_class_name('_rz1lq').click()
-    # browser.find_element_by_xpath('//*[@id="react-root"]/div/article/div/div[1]/div/form/button').click()
-    # except Exception as e:
-    #     pass
 
     username_box = browser.find_element_by_xpath("//input[@name='username']")
     password_box = browser.find_element_by_xpath("//input[@name='password']")
@@ -71,9 +61,13 @@ def login(browser, username, password):
 
     username_box.send_keys(username)
     password_box.send_keys(password)
-    # time.sleep(1)
+    time.sleep(1)
     login.click()
-    # time.sleep(3)
+    time.sleep(2)
+
+def get_scrape_account_name():
+    account_name = input('Type in the account name you wish to download: ')
+    return account_name
 
 def get_request(image_url, the_queue):
     r = requests.get(image_url)
@@ -85,12 +79,13 @@ def get_request(image_url, the_queue):
 if __name__ == '__main__':
     username = input('Username: ')
     password = getpass.getpass('Password: ')
+    user_to_scrape = get_scrape_account_name()
     start_time = time.time()
     the_queue = queue.Queue()
     the_write_thread = threading.Thread(target=saveImage, args=(the_queue,))
     browser = webdriver.Firefox()
     login(browser, username, password)
-    base_page = 'https://www.instagram.com//'
+    base_page = 'https://www.instagram.com/{}/'.format(user_to_scrape )
     pictures = get_all_pictures(browser, base_page, the_queue)
     the_write_thread.start()
 
