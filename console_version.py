@@ -1,11 +1,9 @@
 from pyvirtualdisplay import Display
 from selenium import webdriver
-from selenium.webdriver.support.ui import WebDriverWait
 import requests
 import queue
 import threading
 import concurrent.futures
-import time
 import getpass
 
 count = 1
@@ -18,6 +16,7 @@ def saveImage(the_queue):
         except queue.Empty:
             pass
         name = '{}.jpg'.format(count)
+        print('Downloaded',name)
         count += 1
         with open(str(name), 'wb') as handle:
             if not data.ok:
@@ -45,10 +44,13 @@ def get_all_pictures(browser, page, the_queue):
             break
 
     xpath = "//*[contains(concat(' ', normalize-space(@class), ' '), ' _icyx7 ')]"
-    pictures = browser.find_elements_by_xpath(xpath)
+    pictures = [pic.get_attribute('src') for pic in browser.find_elements_by_xpath(xpath)]
+    close_browser(browser)
     with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
+        print('Starting downloading.')
         for url in pictures:
-            executor.submit(get_request, url.get_attribute('src'), the_queue)
+            executor.submit(get_request, url, the_queue)
+    print('Finished saving all photos.')
 
 def login(browser, username, password):
     url = 'https://www.instagram.com/accounts/login/'
@@ -76,19 +78,7 @@ def get_request(image_url, the_queue):
     except Exception:
         pass
 
-if __name__ == '__main__':
-    username = input('Username: ')
-    password = getpass.getpass('Password: ')
-    user_to_scrape = get_scrape_account_name()
-    start_time = time.time()
-    the_queue = queue.Queue()
-    the_write_thread = threading.Thread(target=saveImage, args=(the_queue,))
-    browser = webdriver.Firefox()
-    login(browser, username, password)
-    base_page = 'https://www.instagram.com/{}/'.format(user_to_scrape )
-    pictures = get_all_pictures(browser, base_page, the_queue)
-    the_write_thread.start()
-
+def close_browser(browser):
     try:
         browser.quit()
     except Exception as e:
@@ -97,4 +87,14 @@ if __name__ == '__main__':
     except Exception as e:
         print(e)
 
-    print("--- %s seconds ---" % (time.time() - start_time))
+if __name__ == '__main__':
+    username = input('Username: ')
+    password = getpass.getpass('Password: ')
+    user_to_scrape = get_scrape_account_name()
+    the_queue = queue.Queue()
+    the_write_thread = threading.Thread(target=saveImage, args=(the_queue,))
+    browser = webdriver.Firefox()
+    login(browser, username, password)
+    base_page = 'https://www.instagram.com/{}/'.format(user_to_scrape )
+    pictures = get_all_pictures(browser, base_page, the_queue)
+    the_write_thread.start()
