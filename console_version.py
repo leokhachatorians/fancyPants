@@ -63,7 +63,7 @@ def get_all_pictures(browser, user_to_scrape, the_queue):
             break
 
     xpath = "//*[contains(concat(' ', normalize-space(@class), ' '), ' _icyx7 ')]"
-    pictures = [pic.get_attribute('src') for pic in browser.find_elements_by_xpath(xpath)]
+    pictures = [pic.get_attribute('src').replace('/s640x640','') for pic in browser.find_elements_by_xpath(xpath)]
     close_browser(browser)
     with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
         print('Starting downloading.')
@@ -111,7 +111,6 @@ if __name__ == '__main__':
     password = getpass.getpass('Password: ')
     user_to_scrape = get_scrape_account_name()
     the_queue = queue.Queue()
-    the_write_thread = threading.Thread(target=saveImage, args=(the_queue,))
     browser = webdriver.Firefox()
     start_time = time.time()
     login(browser, username, password)
