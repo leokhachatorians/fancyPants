@@ -1,5 +1,5 @@
-# fancyPants
-## What is fancyPants?
+# grabber
+## What is grabber?
 * A simple, multi-threaded, selenium backed, Instagram photo saving GUI (soon) thing.
 * Bypasses the pesky Instagram API to seamlessly (kinda) download, in bulk, all the photos of a specified user (given that their account is public)
 
